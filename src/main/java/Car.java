@@ -3,13 +3,14 @@ import java.util.concurrent.CountDownLatch;
 public class Car implements Runnable {
 	private static int CARS_COUNT;
 	private static CountDownLatch cdlStart;
+	private static CountDownLatch cdlFinish;
 	static {
 		CARS_COUNT = 0 ;
 	}
 
-	private Race race;
-	private int speed;
-	private String name;
+	private final Race race;
+	private final int speed;
+	private final String name;
 
 	public String getName () {
 		return name;
@@ -23,6 +24,10 @@ public class Car implements Runnable {
 		return  cdlStart;
 	}
 
+	public static CountDownLatch getCdlFinish() {
+		return cdlFinish;
+	}
+
 	public int getSpeed () {
 		return speed;
 	}
@@ -33,6 +38,7 @@ public class Car implements Runnable {
 		CARS_COUNT++;
 		this.name = "Участник #" + CARS_COUNT;
 		cdlStart = new CountDownLatch(CARS_COUNT);
+		cdlFinish = new CountDownLatch(CARS_COUNT);
 	}
 
 	@Override
@@ -48,12 +54,13 @@ public class Car implements Runnable {
 		for ( int i = 0 ; i < race.getStages().size(); i++) {
 			try {
 				cdlStart.await();
-				if (!Thread.currentThread().isInterrupted()) {
-					race.getStages().get(i).go(this);
-				}
+				race.getStages().get(i).go(this);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
 		}
+
+		cdlFinish.countDown();
+		race.addResults(this);
 	}
 }
